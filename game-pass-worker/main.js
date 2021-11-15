@@ -1,11 +1,6 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-
-const keys = [
-    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 
-    'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 
-    'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
-];
+const schedule = require('node-schedule');
 
 const { Worker }  = require('worker_threads');
 
@@ -14,6 +9,13 @@ let workDir = __dirname + "/dbWorker.js";
 
 const mainFunc = async () => {
     const url = "https://www.pc-magazin.de/ratgeber/game-pass-spiele-neu-alle-games-liste-xbox-one-xbox-360-pc-play-anywhere-3200215-17084.html";
+
+    const keys = [
+        'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 
+        'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 
+        'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'
+    ];
+
     let res = await fetchData(url);
     if(!res.data){
       console.log("Invalid data Obj");
@@ -55,15 +57,18 @@ const mainFunc = async () => {
     return dataObj;
 }
 
-mainFunc().then((res) => {
-    // start worker
-    const worker = new Worker(workDir); 
-    console.log("Sending crawled data to dbWorker...");
-    // send formatted data to worker thread 
-    worker.postMessage(res);
-    // listen to message from worker thread
-    worker.on("message", (message) => {
-        console.log(message)
+// '0 12,22 * * *'
+const job = schedule.scheduleJob('0 12,22 * * *', function(){
+    mainFunc().then((res) => {
+        // start worker
+        const worker = new Worker(workDir); 
+        console.log("Sending crawled data to dbWorker...");
+        // send formatted data to worker thread 
+        worker.postMessage(res);
+        // listen to message from worker thread
+        worker.on("message", (message) => {
+            console.log(message)
+        });
     });
 });
 
